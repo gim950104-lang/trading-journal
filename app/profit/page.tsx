@@ -51,7 +51,8 @@ function parseNumber(value: string) {
 }
 
 function formatMoney(value: number) {
-  return `${value.toLocaleString()}원`;
+  const rounded = Math.round(value);
+  return `${rounded.toLocaleString()}원`;
 }
 
 function formatShortDate(date: string) {
@@ -150,7 +151,8 @@ export default function ProfitPage() {
     let sell = 0;
 
     const stockMap = new Map<string, StockDataItem>();
-    const sellByDateMap = new Map<
+    const positionMap = new Map<string, { qty: number; avg: number }>();
+    const profitByDateMap = new Map<
       string,
       {
         total: number;
@@ -173,28 +175,51 @@ export default function ProfitPage() {
         });
       }
 
+      if (!positionMap.has(stockName)) {
+        positionMap.set(stockName, {
+          qty: 0,
+          avg: 0,
+        });
+      }
+
       const stock = stockMap.get(stockName)!;
+      const position = positionMap.get(stockName)!;
 
       if (trade.side === "매수") {
         buy += amount;
         stock.buy += amount;
+
+        const totalCost = position.avg * position.qty + price * qty;
+        const nextQty = position.qty + qty;
+
+        position.qty = nextQty;
+        position.avg = nextQty > 0 ? totalCost / nextQty : 0;
       } else {
         sell += amount;
         stock.sell += amount;
 
-        if (!sellByDateMap.has(date)) {
-          sellByDateMap.set(date, {
+        const sellQty = Math.min(qty, position.qty);
+        const realizedProfit = (price - position.avg) * sellQty;
+
+        position.qty = Math.max(position.qty - sellQty, 0);
+
+        if (position.qty === 0) {
+          position.avg = 0;
+        }
+
+        if (!profitByDateMap.has(date)) {
+          profitByDateMap.set(date, {
             total: 0,
             details: [],
           });
         }
 
-        const current = sellByDateMap.get(date)!;
-        current.total += amount;
+        const current = profitByDateMap.get(date)!;
+        current.total += realizedProfit;
         current.details.push({
           name: stockName,
-          amount,
-          qty,
+          amount: realizedProfit,
+          qty: sellQty,
         });
       }
     }
@@ -203,17 +228,18 @@ export default function ProfitPage() {
       a.name.localeCompare(b.name)
     );
 
-    const sortedSellByDate = Array.from(sellByDateMap.entries()).sort((a, b) =>
-      a[0].localeCompare(b[0])
+    const sortedProfitByDate = Array.from(profitByDateMap.entries()).sort(
+      (a, b) => a[0].localeCompare(b[0])
     );
 
-    let runningSell = 0;
-    const cumulativeArr: CumulativeDataItem[] = sortedSellByDate.map(
+    let runningProfit = 0;
+    const cumulativeArr: CumulativeDataItem[] = sortedProfitByDate.map(
       ([date, value]) => {
-        runningSell += value.total;
+        runningProfit += value.total;
+
         return {
           date,
-          profit: runningSell,
+          profit: runningProfit,
           details: value.details,
         };
       }
@@ -265,7 +291,8 @@ export default function ProfitPage() {
     .map((point, index) => `${index === 0 ? "M" : "L"} ${point.x} ${point.y}`)
     .join(" ");
 
-  const zeroY = chartHeight - ((0 - minCumulative) / cumulativeRange) * 180 + 20;
+  const zeroY =
+    chartHeight - ((0 - minCumulative) / cumulativeRange) * 180 + 20;
 
   return (
     <main className="min-h-screen bg-[#f5f5f5] px-6 py-10">
@@ -409,9 +436,9 @@ export default function ProfitPage() {
           </section>
 
           <section className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
-            <h2 className="text-2xl font-bold text-slate-900">누적 매도 금액 그래프</h2>
+            <h2 className="text-2xl font-bold text-slate-900">누적 실현 손익 그래프</h2>
             <p className="mt-2 text-slate-500">
-              매수는 제외하고, 매도된 금액만 날짜 순서대로 누적해서 보여줘
+              매도 시점 기준으로 실현된 손익을 날짜 순서대로 누적해서 보여줘
             </p>
 
             {cumulativeData.length === 0 ? (
@@ -493,7 +520,7 @@ export default function ProfitPage() {
                                 fill={pointColor}
                                 fontWeight="700"
                               >
-                                {point.profit.toLocaleString()}
+                                {formatMoney(point.profit)}
                               </text>
                               <text
                                 x={point.x}
@@ -584,7 +611,7 @@ export default function ProfitPage() {
           </div>
 
           <div className="mt-3 text-xs font-semibold text-slate-400">
-            해당 날짜 매도 내역
+            해당 날짜 실현 손익
           </div>
 
           <div className="mt-2 space-y-1">
@@ -594,7 +621,13 @@ export default function ProfitPage() {
                 className="flex items-center justify-between gap-3 text-xs text-slate-600"
               >
                 <span className="truncate">{detail.name}</span>
-                <span className="shrink-0">
+                <span
+                  className={
+                    detail.amount >= 0
+                      ? "shrink-0 text-red-500 font-semibold"
+                      : "shrink-0 text-blue-500 font-semibold"
+                  }
+                >
                   {formatMoney(detail.amount)} · {detail.qty}주
                 </span>
               </div>

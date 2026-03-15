@@ -12,6 +12,30 @@ type Trade = {
   memo?: string;
 };
 
+type StockDataItem = {
+  name: string;
+  buy: number;
+  sell: number;
+};
+
+type SellDetailItem = {
+  name: string;
+  amount: number;
+  qty: number;
+};
+
+type CumulativeDataItem = {
+  date: string;
+  profit: number;
+  details: SellDetailItem[];
+};
+
+type HoveredTooltip = {
+  x: number;
+  y: number;
+  point: CumulativeDataItem;
+} | null;
+
 const STORAGE_KEY = "trades";
 
 function parseNumber(value: string) {
@@ -37,10 +61,18 @@ function formatShortDate(date: string) {
   return `${parts[1]}/${parts[2]}`;
 }
 
+function formatFullDate(date: string) {
+  if (!date) return "";
+  const parts = date.split("-");
+  if (parts.length !== 3) return date;
+  return `${parts[0]}.${parts[1]}.${parts[2]}`;
+}
+
 export default function ProfitPage() {
   const [trades, setTrades] = useState<Trade[]>([]);
   const [selectedStock, setSelectedStock] = useState("전체");
   const [range, setRange] = useState("전체");
+  const [hoveredTooltip, setHoveredTooltip] = useState<HoveredTooltip>(null);
 
   useEffect(() => {
     const saved = localStorage.getItem(STORAGE_KEY);
@@ -108,63 +140,87 @@ export default function ProfitPage() {
     totalBuy,
     totalSell,
     totalProfit,
-    dailyData,
+    stockData,
     cumulativeData,
-    maxDailyAmount,
+    maxStockAmount,
     minCumulative,
     maxCumulative,
   } = useMemo(() => {
     let buy = 0;
     let sell = 0;
 
-    const dailyMap = new Map<string, { date: string; buy: number; sell: number }>();
-    const cumulativeRaw: { date: string; profit: number }[] = [];
-
-    let runningProfit = 0;
+    const stockMap = new Map<string, StockDataItem>();
+    const sellByDateMap = new Map<
+      string,
+      {
+        total: number;
+        details: SellDetailItem[];
+      }
+    >();
 
     for (const trade of filteredTrades) {
       const price = parseNumber(trade.price);
       const qty = parseNumber(trade.qty);
       const amount = price * qty;
       const date = trade.date || "날짜없음";
+      const stockName = String(trade.name || "").trim() || "종목없음";
 
-      if (!dailyMap.has(date)) {
-        dailyMap.set(date, { date, buy: 0, sell: 0 });
+      if (!stockMap.has(stockName)) {
+        stockMap.set(stockName, {
+          name: stockName,
+          buy: 0,
+          sell: 0,
+        });
       }
 
-      const current = dailyMap.get(date)!;
+      const stock = stockMap.get(stockName)!;
 
       if (trade.side === "매수") {
         buy += amount;
-        current.buy += amount;
-        runningProfit -= amount;
+        stock.buy += amount;
       } else {
         sell += amount;
-        current.sell += amount;
-        runningProfit += amount;
-      }
+        stock.sell += amount;
 
-      cumulativeRaw.push({
-        date,
-        profit: runningProfit,
-      });
+        if (!sellByDateMap.has(date)) {
+          sellByDateMap.set(date, {
+            total: 0,
+            details: [],
+          });
+        }
+
+        const current = sellByDateMap.get(date)!;
+        current.total += amount;
+        current.details.push({
+          name: stockName,
+          amount,
+          qty,
+        });
+      }
     }
 
-    const dailyArr = Array.from(dailyMap.values()).sort((a, b) =>
-      a.date.localeCompare(b.date)
+    const stockArr = Array.from(stockMap.values()).sort((a, b) =>
+      a.name.localeCompare(b.name)
     );
 
-    const cumulativeMap = new Map<string, number>();
-    for (const item of cumulativeRaw) {
-      cumulativeMap.set(item.date, item.profit);
-    }
+    const sortedSellByDate = Array.from(sellByDateMap.entries()).sort((a, b) =>
+      a[0].localeCompare(b[0])
+    );
 
-    const cumulativeArr = Array.from(cumulativeMap.entries())
-      .map(([date, profit]) => ({ date, profit }))
-      .sort((a, b) => a.date.localeCompare(b.date));
+    let runningSell = 0;
+    const cumulativeArr: CumulativeDataItem[] = sortedSellByDate.map(
+      ([date, value]) => {
+        runningSell += value.total;
+        return {
+          date,
+          profit: runningSell,
+          details: value.details,
+        };
+      }
+    );
 
-    const maxDaily = Math.max(
-      ...dailyArr.flatMap((item) => [item.buy, item.sell]),
+    const maxStock = Math.max(
+      ...stockArr.flatMap((item) => [item.buy, item.sell]),
       1
     );
 
@@ -175,9 +231,9 @@ export default function ProfitPage() {
       totalBuy: buy,
       totalSell: sell,
       totalProfit: sell - buy,
-      dailyData: dailyArr,
+      stockData: stockArr,
       cumulativeData: cumulativeArr,
-      maxDailyAmount: maxDaily,
+      maxStockAmount: maxStock,
       minCumulative: minCum,
       maxCumulative: maxCum,
     };
@@ -189,9 +245,9 @@ export default function ProfitPage() {
       .slice(0, 5);
   }, [filteredTrades]);
 
-  const barMaxHeight = 220;
+  const svgWidth = Math.max(cumulativeData.length * 160, 1100);
+  const chartHeight = 260;
   const cumulativeRange = Math.max(maxCumulative - minCumulative, 1);
-  const svgWidth = Math.max(cumulativeData.length * 140, 1100);
 
   const cumulativePoints = cumulativeData.map((item, index) => {
     const x =
@@ -200,7 +256,7 @@ export default function ProfitPage() {
         : (index / (cumulativeData.length - 1)) * (svgWidth - 120) + 60;
 
     const normalized = (item.profit - minCumulative) / cumulativeRange;
-    const y = 260 - normalized * 220 + 20;
+    const y = chartHeight - normalized * 180 + 20;
 
     return { ...item, x, y };
   });
@@ -209,7 +265,7 @@ export default function ProfitPage() {
     .map((point, index) => `${index === 0 ? "M" : "L"} ${point.x} ${point.y}`)
     .join(" ");
 
-  const zeroY = 260 - ((0 - minCumulative) / cumulativeRange) * 220 + 20;
+  const zeroY = chartHeight - ((0 - minCumulative) / cumulativeRange) * 180 + 20;
 
   return (
     <main className="min-h-screen bg-[#f5f5f5] px-6 py-10">
@@ -271,12 +327,12 @@ export default function ProfitPage() {
 
         <div className="space-y-6">
           <section className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
-            <h2 className="text-2xl font-bold text-slate-900">거래 금액 그래프</h2>
+            <h2 className="text-2xl font-bold text-slate-900">종목별 거래 금액</h2>
             <p className="mt-2 text-slate-500">
-              날짜별로 매수 금액과 매도 금액을 나눠서 보여줘
+              종목별로 매수 금액과 매도 금액을 묶어서 보여줘
             </p>
 
-            {dailyData.length === 0 ? (
+            {stockData.length === 0 ? (
               <p className="mt-8 text-slate-500">표시할 거래 기록이 없어.</p>
             ) : (
               <div className="mt-8 rounded-2xl bg-slate-50 p-5">
@@ -292,29 +348,31 @@ export default function ProfitPage() {
                 </div>
 
                 <div className="overflow-x-auto">
-                  <div className="flex min-w-max items-end gap-8 px-4 pb-4 pt-10">
-                    {dailyData.map((item) => {
+                  <div className="flex min-w-max items-end gap-10 px-4 pb-4 pt-10">
+                    {stockData.map((item) => {
                       const buyHeight = Math.max(
-                        (item.buy / maxDailyAmount) * barMaxHeight,
+                        (item.buy / maxStockAmount) * 220,
                         item.buy > 0 ? 18 : 0
                       );
                       const sellHeight = Math.max(
-                        (item.sell / maxDailyAmount) * barMaxHeight,
+                        (item.sell / maxStockAmount) * 220,
                         item.sell > 0 ? 18 : 0
                       );
 
+                      const stockProfit = item.sell - item.buy;
+
                       return (
                         <div
-                          key={item.date}
-                          className="flex w-[120px] shrink-0 flex-col items-center"
+                          key={item.name}
+                          className="flex w-[180px] shrink-0 flex-col items-center"
                         >
-                          <div className="flex h-[260px] items-end gap-3">
+                          <div className="flex h-[260px] items-end gap-4">
                             <div className="flex flex-col items-center justify-end">
                               <div className="mb-2 h-5 text-[11px] font-medium text-slate-500">
                                 {item.buy > 0 ? item.buy.toLocaleString() : ""}
                               </div>
                               <div
-                                className="w-10 rounded-t-xl bg-slate-900"
+                                className="w-14 rounded-t-xl bg-slate-900"
                                 style={{ height: `${buyHeight}px` }}
                               />
                             </div>
@@ -324,14 +382,22 @@ export default function ProfitPage() {
                                 {item.sell > 0 ? item.sell.toLocaleString() : ""}
                               </div>
                               <div
-                                className="w-10 rounded-t-xl bg-blue-500"
+                                className="w-14 rounded-t-xl bg-blue-500"
                                 style={{ height: `${sellHeight}px` }}
                               />
                             </div>
                           </div>
 
-                          <div className="mt-3 text-sm font-medium text-slate-500">
-                            {formatShortDate(item.date)}
+                          <div className="mt-4 text-base font-bold text-slate-800">
+                            {item.name}
+                          </div>
+                          <div
+                            className={`mt-1 text-sm font-semibold ${
+                              stockProfit >= 0 ? "text-red-500" : "text-blue-500"
+                            }`}
+                          >
+                            손익 {stockProfit >= 0 ? "+" : ""}
+                            {stockProfit.toLocaleString()}원
                           </div>
                         </div>
                       );
@@ -343,17 +409,22 @@ export default function ProfitPage() {
           </section>
 
           <section className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
-            <h2 className="text-2xl font-bold text-slate-900">누적 손익 그래프</h2>
+            <h2 className="text-2xl font-bold text-slate-900">누적 매도 금액 그래프</h2>
             <p className="mt-2 text-slate-500">
-              날짜가 지나면서 전체 손익이 어떻게 변했는지 선으로 보여줘
+              매수는 제외하고, 매도된 금액만 날짜 순서대로 누적해서 보여줘
             </p>
 
             {cumulativeData.length === 0 ? (
-              <p className="mt-8 text-slate-500">표시할 거래 기록이 없어.</p>
+              <p className="mt-8 text-slate-500">표시할 매도 기록이 없어.</p>
             ) : (
               <div className="mt-8 rounded-2xl bg-slate-50 p-5">
                 <div className="overflow-x-auto">
-                  <svg width={svgWidth} height={340} className="block">
+                  <svg
+                    width={svgWidth}
+                    height={360}
+                    className="block"
+                    onMouseLeave={() => setHoveredTooltip(null)}
+                  >
                     <line
                       x1="40"
                       x2={svgWidth - 40}
@@ -366,7 +437,7 @@ export default function ProfitPage() {
                     <path
                       d={linePath}
                       fill="none"
-                      stroke={totalProfit >= 0 ? "#ef4444" : "#2563eb"}
+                      stroke="#e11d48"
                       strokeWidth="4"
                       strokeLinecap="round"
                       strokeLinejoin="round"
@@ -374,8 +445,9 @@ export default function ProfitPage() {
 
                     {cumulativePoints.map((point, index) => {
                       const positive = point.profit >= 0;
+                      const pointColor = positive ? "#ef4444" : "#2563eb";
                       const showLabel =
-                        cumulativePoints.length <= 12 ||
+                        cumulativePoints.length <= 10 ||
                         index === 0 ||
                         index === cumulativePoints.length - 1 ||
                         index % 2 === 0;
@@ -385,25 +457,47 @@ export default function ProfitPage() {
                           <circle
                             cx={point.x}
                             cy={point.y}
-                            r="6"
-                            fill={positive ? "#ef4444" : "#2563eb"}
+                            r="8"
+                            fill={pointColor}
+                          />
+
+                          <circle
+                            cx={point.x}
+                            cy={point.y}
+                            r="18"
+                            fill="transparent"
+                            className="cursor-pointer"
+                            onMouseEnter={(e) =>
+                              setHoveredTooltip({
+                                x: e.clientX,
+                                y: e.clientY,
+                                point,
+                              })
+                            }
+                            onMouseMove={(e) =>
+                              setHoveredTooltip({
+                                x: e.clientX,
+                                y: e.clientY,
+                                point,
+                              })
+                            }
                           />
 
                           {showLabel && (
                             <>
                               <text
                                 x={point.x}
-                                y={point.y - 14}
+                                y={point.y - 18}
                                 textAnchor="middle"
                                 fontSize="12"
-                                fill={positive ? "#ef4444" : "#2563eb"}
+                                fill={pointColor}
                                 fontWeight="700"
                               >
                                 {point.profit.toLocaleString()}
                               </text>
                               <text
                                 x={point.x}
-                                y={310}
+                                y={325}
                                 textAnchor="middle"
                                 fontSize="12"
                                 fill="#64748b"
@@ -468,6 +562,46 @@ export default function ProfitPage() {
           </section>
         </div>
       </div>
+
+      {hoveredTooltip && (
+        <div
+          className="pointer-events-none fixed z-[9999] w-[260px] rounded-2xl border border-slate-200 bg-white p-4 shadow-2xl"
+          style={{
+            left: Math.min(hoveredTooltip.x + 16, window.innerWidth - 280),
+            top: Math.max(hoveredTooltip.y - 20, 16),
+          }}
+        >
+          <div className="text-sm font-bold text-slate-900">
+            {formatFullDate(hoveredTooltip.point.date)}
+          </div>
+
+          <div
+            className={`mt-1 text-sm font-bold ${
+              hoveredTooltip.point.profit >= 0 ? "text-red-500" : "text-blue-500"
+            }`}
+          >
+            누적 {formatMoney(hoveredTooltip.point.profit)}
+          </div>
+
+          <div className="mt-3 text-xs font-semibold text-slate-400">
+            해당 날짜 매도 내역
+          </div>
+
+          <div className="mt-2 space-y-1">
+            {hoveredTooltip.point.details.map((detail, index) => (
+              <div
+                key={`${hoveredTooltip.point.date}-${detail.name}-${index}`}
+                className="flex items-center justify-between gap-3 text-xs text-slate-600"
+              >
+                <span className="truncate">{detail.name}</span>
+                <span className="shrink-0">
+                  {formatMoney(detail.amount)} · {detail.qty}주
+                </span>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
     </main>
   );
 }

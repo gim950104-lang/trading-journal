@@ -12,21 +12,48 @@ type Trade = {
   qty: string;
 };
 
-const STORAGE_KEY = "trades";
-
 export default function StockDetailPage() {
   const params = useParams();
   const [trades, setTrades] = useState<Trade[]>([]);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const saved = localStorage.getItem(STORAGE_KEY);
-    if (saved) {
+    const fetchTrades = async () => {
       try {
-        setTrades(JSON.parse(saved));
-      } catch {
+        setLoading(true);
+
+        const res = await fetch("/api/trades", {
+          method: "GET",
+          cache: "no-store",
+        });
+
+        const data = await res.json();
+
+        if (!res.ok) {
+          throw new Error(data?.error || "거래 기록 조회 실패");
+        }
+
+        const normalized = Array.isArray(data)
+          ? data.map((item: any) => ({
+              id: String(item.id ?? ""),
+              name: String(item.name ?? ""),
+              side: String(item.side ?? "매수"),
+              date: item.date ? String(item.date).slice(0, 10) : "",
+              price: String(item.price ?? ""),
+              qty: String(item.qty ?? ""),
+            }))
+          : [];
+
+        setTrades(normalized);
+      } catch (error) {
+        console.error(error);
         setTrades([]);
+      } finally {
+        setLoading(false);
       }
-    }
+    };
+
+    fetchTrades();
   }, []);
 
   const stockName = decodeURIComponent(String(params.name || "")).trim();
@@ -62,7 +89,11 @@ export default function StockDetailPage() {
           {stockName} 분석
         </h1>
 
-        {filteredTrades.length === 0 ? (
+        {loading ? (
+          <div className="rounded-3xl border border-slate-200 bg-white p-8 shadow-sm text-slate-500">
+            불러오는 중...
+          </div>
+        ) : filteredTrades.length === 0 ? (
           <div className="rounded-3xl border border-slate-200 bg-white p-8 shadow-sm text-slate-500">
             이 종목의 거래 기록이 없어.
           </div>

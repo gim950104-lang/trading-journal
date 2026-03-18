@@ -10,26 +10,58 @@ type Trade = {
   date: string;
   price: string;
   qty: string;
+  memo?: string;
 };
-
-const STORAGE_KEY = "trades";
 
 export default function StocksPage() {
   const [trades, setTrades] = useState<Trade[]>([]);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const saved = localStorage.getItem(STORAGE_KEY);
-    if (saved) {
+    const fetchTrades = async () => {
       try {
-        setTrades(JSON.parse(saved));
-      } catch {
+        setLoading(true);
+
+        const res = await fetch("/api/trades", {
+          method: "GET",
+          cache: "no-store",
+        });
+
+        const data = await res.json();
+
+        if (!res.ok) {
+          throw new Error(data?.error || "거래 기록 조회 실패");
+        }
+
+        const normalized = Array.isArray(data)
+          ? data.map((item: any) => ({
+              id: String(item.id ?? ""),
+              name: String(item.name ?? ""),
+              side: String(item.side ?? "매수"),
+              date: item.date ? String(item.date).slice(0, 10) : "",
+              price: String(item.price ?? ""),
+              qty: String(item.qty ?? ""),
+              memo: String(item.memo ?? ""),
+            }))
+          : [];
+
+        setTrades(normalized);
+      } catch (error) {
+        console.error(error);
         setTrades([]);
+      } finally {
+        setLoading(false);
       }
-    }
+    };
+
+    fetchTrades();
   }, []);
 
   const stocks = useMemo(() => {
-    const names = trades.map((trade) => trade.name.trim()).filter(Boolean);
+    const names = trades
+      .map((trade) => trade.name.trim())
+      .filter(Boolean);
+
     return [...new Set(names)];
   }, [trades]);
 
@@ -41,7 +73,11 @@ export default function StocksPage() {
         </h1>
 
         <div className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
-          {stocks.length === 0 ? (
+          {loading ? (
+            <div className="rounded-2xl border border-dashed border-slate-300 bg-slate-50 p-8 text-slate-500">
+              불러오는 중...
+            </div>
+          ) : stocks.length === 0 ? (
             <div className="rounded-2xl border border-dashed border-slate-300 bg-slate-50 p-8 text-slate-500">
               저장된 종목이 없어.
             </div>

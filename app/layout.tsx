@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import { ClerkProvider } from "@clerk/nextjs";
 import "./globals.css";
 
 export const metadata: Metadata = {
@@ -29,68 +30,70 @@ export default function RootLayout({
           color: "#111827",
         }}
       >
-        <header
-          style={{
-            position: "sticky",
-            top: 0,
-            zIndex: 100,
-            backgroundColor: "white",
-            borderBottom: "1px solid #e5e7eb",
-            padding: "16px 24px",
-          }}
-        >
-          <div
+        <ClerkProvider>
+          <header
             style={{
-              maxWidth: 1100,
-              margin: "0 auto",
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "space-between",
-              gap: 16,
-              flexWrap: "wrap",
+              position: "sticky",
+              top: 0,
+              zIndex: 100,
+              backgroundColor: "white",
+              borderBottom: "1px solid #e5e7eb",
+              padding: "16px 24px",
             }}
           >
-            <Link
-              href="/"
+            <div
               style={{
-                textDecoration: "none",
-                color: "#111827",
-                fontSize: 24,
-                fontWeight: 800,
-              }}
-            >
-              📈 매매일지
-            </Link>
-
-            <nav
-              style={{
+                maxWidth: 1100,
+                margin: "0 auto",
                 display: "flex",
-                gap: 12,
+                alignItems: "center",
+                justifyContent: "space-between",
+                gap: 16,
                 flexWrap: "wrap",
               }}
             >
-              {navItems.map((item) => (
-                <Link
-                  key={item.href}
-                  href={item.href}
-                  style={{
-                    textDecoration: "none",
-                    color: "#111827",
-                    backgroundColor: "#f3f4f6",
-                    padding: "12px 16px",
-                    borderRadius: 12,
-                    fontWeight: 700,
-                    fontSize: 15,
-                  }}
-                >
-                  {item.label}
-                </Link>
-              ))}
-            </nav>
-          </div>
-        </header>
+              <Link
+                href="/"
+                style={{
+                  textDecoration: "none",
+                  color: "#111827",
+                  fontSize: 24,
+                  fontWeight: 800,
+                }}
+              >
+                📈 매매일지
+              </Link>
 
-        {children}
+              <nav
+                style={{
+                  display: "flex",
+                  gap: 12,
+                  flexWrap: "wrap",
+                }}
+              >
+                {navItems.map((item) => (
+                  <Link
+                    key={item.href}
+                    href={item.href}
+                    style={{
+                      textDecoration: "none",
+                      color: "#111827",
+                      backgroundColor: "#f3f4f6",
+                      padding: "12px 16px",
+                      borderRadius: 12,
+                      fontWeight: 700,
+                      fontSize: 15,
+                    }}
+                  >
+                    {item.label}
+                  </Link>
+                ))}
+              </nav>
+            </div>
+          </header>
+
+          {children}
+        </ClerkProvider>
       </body>
     </html>
   );

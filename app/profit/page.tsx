@@ -36,8 +36,6 @@ type HoveredTooltip = {
   point: CumulativeDataItem;
 } | null;
 
-const STORAGE_KEY = "trades";
-
 function parseNumber(value: string) {
   return (
     Number(
@@ -71,23 +69,33 @@ function formatFullDate(date: string) {
 
 export default function ProfitPage() {
   const [trades, setTrades] = useState<Trade[]>([]);
+  const [loading, setLoading] = useState(true);
   const [selectedStock, setSelectedStock] = useState("전체");
   const [range, setRange] = useState("전체");
   const [hoveredTooltip, setHoveredTooltip] = useState<HoveredTooltip>(null);
 
   useEffect(() => {
-    const saved = localStorage.getItem(STORAGE_KEY);
-
-    if (saved) {
+    const fetchTrades = async () => {
       try {
-        const parsed = JSON.parse(saved);
+        setLoading(true);
 
-        const normalized = Array.isArray(parsed)
-          ? parsed.map((item: any) => ({
+        const res = await fetch("/api/trades", {
+          method: "GET",
+          cache: "no-store",
+        });
+
+        const data = await res.json();
+
+        if (!res.ok) {
+          throw new Error(data?.error || "거래 기록 조회 실패");
+        }
+
+        const normalized = Array.isArray(data)
+          ? data.map((item: any) => ({
               id: String(item.id ?? ""),
               name: String(item.name ?? ""),
               side: String(item.side ?? "매수"),
-              date: String(item.date ?? ""),
+              date: item.date ? String(item.date).slice(0, 10) : "",
               price: String(item.price ?? ""),
               qty: String(item.qty ?? ""),
               memo: String(item.memo ?? ""),
@@ -95,10 +103,15 @@ export default function ProfitPage() {
           : [];
 
         setTrades(normalized);
-      } catch {
+      } catch (error) {
+        console.error(error);
         setTrades([]);
+      } finally {
+        setLoading(false);
       }
-    }
+    };
+
+    fetchTrades();
   }, []);
 
   const stockList = useMemo(() => {
@@ -359,7 +372,9 @@ export default function ProfitPage() {
               종목별로 매수 금액과 매도 금액을 묶어서 보여줘
             </p>
 
-            {stockData.length === 0 ? (
+            {loading ? (
+              <p className="mt-8 text-slate-500">불러오는 중...</p>
+            ) : stockData.length === 0 ? (
               <p className="mt-8 text-slate-500">표시할 거래 기록이 없어.</p>
             ) : (
               <div className="mt-8 rounded-2xl bg-slate-50 p-5">
@@ -441,7 +456,9 @@ export default function ProfitPage() {
               매도 시점 기준으로 실현된 손익을 날짜 순서대로 누적해서 보여줘
             </p>
 
-            {cumulativeData.length === 0 ? (
+            {loading ? (
+              <p className="mt-8 text-slate-500">불러오는 중...</p>
+            ) : cumulativeData.length === 0 ? (
               <p className="mt-8 text-slate-500">표시할 매도 기록이 없어.</p>
             ) : (
               <div className="mt-8 rounded-2xl bg-slate-50 p-5">
@@ -548,7 +565,9 @@ export default function ProfitPage() {
               선택한 종목과 기간 기준으로 최근 거래 메모를 보여줘
             </p>
 
-            {recentTrades.length === 0 ? (
+            {loading ? (
+              <p className="mt-8 text-slate-500">불러오는 중...</p>
+            ) : recentTrades.length === 0 ? (
               <p className="mt-8 text-slate-500">표시할 거래 기록이 없어.</p>
             ) : (
               <div className="mt-6 space-y-4">
@@ -624,8 +643,8 @@ export default function ProfitPage() {
                 <span
                   className={
                     detail.amount >= 0
-                      ? "shrink-0 text-red-500 font-semibold"
-                      : "shrink-0 text-blue-500 font-semibold"
+                      ? "shrink-0 font-semibold text-red-500"
+                      : "shrink-0 font-semibold text-blue-500"
                   }
                 >
                   {formatMoney(detail.amount)} · {detail.qty}주

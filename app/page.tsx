@@ -1,4 +1,13 @@
-export default function Home() {
+import {
+  SignInButton,
+  SignUpButton,
+  UserButton,
+} from "@clerk/nextjs";
+import { auth } from "@clerk/nextjs/server";
+
+export default async function Home() {
+  const { userId } = await auth();
+
   return (
     <div
       style={{
@@ -8,6 +17,52 @@ export default function Home() {
         fontFamily: "sans-serif",
       }}
     >
+      <div
+        style={{
+          maxWidth: 720,
+          margin: "0 auto 20px auto",
+          display: "flex",
+          justifyContent: "flex-end",
+        }}
+      >
+        {userId ? (
+          <UserButton />
+        ) : (
+          <div style={{ display: "flex", gap: 10 }}>
+            <SignInButton mode="modal">
+              <button
+                style={{
+                  padding: "10px 16px",
+                  borderRadius: 10,
+                  border: "1px solid #ddd",
+                  background: "white",
+                  cursor: "pointer",
+                  fontWeight: 600,
+                }}
+              >
+                로그인
+              </button>
+            </SignInButton>
+
+            <SignUpButton mode="modal">
+              <button
+                style={{
+                  padding: "10px 16px",
+                  borderRadius: 10,
+                  border: "1px solid #111",
+                  background: "#111",
+                  color: "white",
+                  cursor: "pointer",
+                  fontWeight: 600,
+                }}
+              >
+                회원가입
+              </button>
+            </SignUpButton>
+          </div>
+        )}
+      </div>
+
       <div
         style={{
           maxWidth: 720,
@@ -22,6 +77,21 @@ export default function Home() {
         <p style={{ color: "#666", marginTop: 8 }}>
           매매 기록, 종목 분석, 수익 그래프를 한 번에 관리하는 웹앱
         </p>
+
+        <div
+          style={{
+            marginTop: 16,
+            padding: 12,
+            borderRadius: 8,
+            backgroundColor: "#f9fafb",
+            border: "1px solid #e5e7eb",
+            fontSize: 14,
+          }}
+        >
+          로그인 상태: {userId ? "로그인됨" : "로그인 안됨"}
+          <br />
+          userId: {userId ?? "없음"}
+        </div>
 
         <div style={{ marginTop: 24, display: "grid", gap: 16 }}>
           <a

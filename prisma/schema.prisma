@@ -1,0 +1,27 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+model User {
+  id        String   @id
+  trades    Trade[]
+  createdAt DateTime @default(now())
+}
+
+model Trade {
+  id        String   @id @default(cuid())
+  userId    String
+  name      String
+  side      String
+  price     Float
+  qty       Float
+  memo      String?
+  date      DateTime
+  createdAt DateTime @default(now())
+
+  user      User @relation(fields: [userId], references: [id])
+}

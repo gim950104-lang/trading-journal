@@ -13,7 +13,10 @@ export async function PATCH(req: Request, context: RouteContext) {
     const { userId } = await auth();
 
     if (!userId) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+      return NextResponse.json(
+        { error: "Unauthorized" },
+        { status: 401 }
+      );
     }
 
     const { id } = await context.params;
@@ -25,19 +28,22 @@ export async function PATCH(req: Request, context: RouteContext) {
         userId,
       },
       data: {
-        name: body.name,
-        side: body.side,
+        name: String(body.name ?? ""),
+        side: String(body.side ?? "매수"),
         date: new Date(body.date),
-        price: body.price,
-        qty: body.qty,
-        memo: body.memo ?? "",
+        price: Number(body.price),
+        qty: Number(body.qty),
+        memo: body.memo ? String(body.memo) : "",
       },
     });
 
     return NextResponse.json(updatedTrade);
   } catch (error) {
-    console.error(error);
-    return NextResponse.json({ error: "거래 수정 실패" }, { status: 500 });
+    console.error("PATCH /api/trades/[id] error:", error);
+    return NextResponse.json(
+      { error: "거래 수정 실패" },
+      { status: 500 }
+    );
   }
 }
 
@@ -46,7 +52,10 @@ export async function DELETE(_req: Request, context: RouteContext) {
     const { userId } = await auth();
 
     if (!userId) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+      return NextResponse.json(
+        { error: "Unauthorized" },
+        { status: 401 }
+      );
     }
 
     const { id } = await context.params;
@@ -60,7 +69,10 @@ export async function DELETE(_req: Request, context: RouteContext) {
 
     return NextResponse.json({ ok: true });
   } catch (error) {
-    console.error(error);
-    return NextResponse.json({ error: "거래 삭제 실패" }, { status: 500 });
+    console.error("DELETE /api/trades/[id] error:", error);
+    return NextResponse.json(
+      { error: "거래 삭제 실패" },
+      { status: 500 }
+    );
   }
 }

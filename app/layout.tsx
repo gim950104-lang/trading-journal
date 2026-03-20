@@ -4,8 +4,9 @@ import { ClerkProvider } from "@clerk/nextjs";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "매매일지",
-  description: "매매 기록, 종목 분석, 수익 그래프를 관리하는 웹앱",
+  title: "매매로그 | 무료 주식 매매일지 사이트",
+  description:
+    "로그인 없이 사용하는 주식 매매일지. 수익 그래프 자동 생성, 종목 분석 제공. 매매로그에서 쉽게 기록하세요.",
 };
 
 const navItems = [
@@ -17,11 +18,19 @@ const navItems = [
 
 export default function RootLayout({
   children,
-}: Readonly<{
+}: {
   children: React.ReactNode;
-}>) {
+}) {
   return (
     <html lang="ko">
+      <head>
+        {/* 🔥 구글 서치콘솔 인증 */}
+        <meta
+          name="google-site-verification"
+          content="xxxxx"
+        />
+      </head>
+
       <body
         style={{
           margin: 0,
@@ -61,7 +70,7 @@ export default function RootLayout({
                   fontWeight: 800,
                 }}
               >
-                📈 매매일지
+                📈 매매로그
               </Link>
 
               <nav

@@ -176,6 +176,40 @@ export default async function Home() {
           </a>
         </div>
       </div>
+
+      {/* 🔥 문의 박스 추가 */}
+      <div
+        style={{
+          maxWidth: 720,
+          margin: "40px auto 0 auto",
+          padding: "16px 20px",
+          backgroundColor: "white",
+          borderRadius: 12,
+          textAlign: "center",
+          fontSize: "14px",
+          color: "#555",
+          lineHeight: 1.6,
+        }}
+      >
+        <div style={{ fontWeight: "bold", marginBottom: 6 }}>
+          문의 / 피드백
+        </div>
+        <div>
+          불편한 점이나 개선 의견이 있으면 아래 이메일로 보내주세요.
+        </div>
+        <a
+          href="mailto:official.maemaelog@gmail.com"
+          style={{
+            display: "inline-block",
+            marginTop: 8,
+            color: "#2563eb",
+            textDecoration: "none",
+            fontWeight: "bold",
+          }}
+        >
+          official.maemaelog@gmail.com
+        </a>
+      </div>
     </div>
   );
 }

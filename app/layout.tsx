@@ -7,6 +7,9 @@ export const metadata: Metadata = {
   title: "매매로그 | 무료 주식 매매일지 사이트",
   description:
     "로그인 없이 사용하는 주식 매매일지. 수익 그래프 자동 생성, 종목 분석 제공. 매매로그에서 쉽게 기록하세요.",
+  verification: {
+    google: "hBpxAX9NfbCfhGYuPLYd8ZJnS5jhJdzz0o07BwGqLxA",
+  },
 };
 
 const navItems = [
@@ -23,14 +26,6 @@ export default function RootLayout({
 }) {
   return (
     <html lang="ko">
-      <head>
-        {/* 🔥 구글 서치콘솔 인증 */}
-        <meta
-          name="google-site-verification"
-          content="xxxxx"
-        />
-      </head>
-
       <body
         style={{
           margin: 0,

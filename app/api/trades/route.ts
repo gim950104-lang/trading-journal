@@ -2,35 +2,63 @@ import { prisma } from "@/lib/prisma";
 import { NextResponse } from "next/server";
 
 export async function POST(req: Request) {
-  const body = await req.json();
+  try {
+    const body = await req.json();
 
-  const trade = await prisma.trade.create({
-    data: {
-      userId: body.userId,
-      name: body.name,
-      side: body.side,
-      price: Number(body.price),
-      qty: Number(body.qty),
-      memo: body.memo || "",
-      date: new Date(body.date),
-    },
-  });
+    // 🔥 userId 없으면 저장 막기
+    if (!body.userId) {
+      return NextResponse.json(
+        { error: "로그인이 필요합니다" },
+        { status: 400 }
+      );
+    }
 
-  return NextResponse.json(trade);
+    const trade = await prisma.trade.create({
+      data: {
+        userId: body.userId,
+        name: body.name,
+        side: body.side,
+        price: Number(body.price),
+        qty: Number(body.qty),
+        memo: body.memo || "",
+        date: new Date(body.date),
+      },
+    });
+
+    return NextResponse.json(trade);
+  } catch (error) {
+    console.error(error);
+    return NextResponse.json(
+      { error: "서버 에러 발생" },
+      { status: 500 }
+    );
+  }
 }
 
 export async function GET(req: Request) {
-  const { searchParams } = new URL(req.url);
-  const userId = searchParams.get("userId");
+  try {
+    const { searchParams } = new URL(req.url);
+    const userId = searchParams.get("userId");
 
-  const trades = await prisma.trade.findMany({
-    where: {
-      userId: userId || undefined,
-    },
-    orderBy: {
-      date: "desc",
-    },
-  });
+    if (!userId) {
+      return NextResponse.json([]);
+    }
 
-  return NextResponse.json(trades);
+    const trades = await prisma.trade.findMany({
+      where: {
+        userId,
+      },
+      orderBy: {
+        date: "desc",
+      },
+    });
+
+    return NextResponse.json(trades);
+  } catch (error) {
+    console.error(error);
+    return NextResponse.json(
+      { error: "서버 에러 발생" },
+      { status: 500 }
+    );
+  }
 }

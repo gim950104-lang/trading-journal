@@ -70,7 +70,8 @@ export default function TradePage() {
           return;
         }
 
-        const res = await fetch("/api/trades", {
+        // ✅ userId 포함해서 가져오기
+        const res = await fetch(`/api/trades?userId=${userId}`, {
           method: "GET",
           cache: "no-store",
         });
@@ -213,12 +214,14 @@ export default function TradePage() {
         return;
       }
 
+      // ✅ userId 추가 (핵심)
       const res = await fetch("/api/trades", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
+          userId: userId,
           name: form.name.trim(),
           side: form.side,
           date: form.date,

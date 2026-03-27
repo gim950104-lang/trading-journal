@@ -1,21 +1,14 @@
 import { prisma } from "@/lib/prisma";
 import { NextResponse } from "next/server";
 
+// ✅ POST (저장)
 export async function POST(req: Request) {
   try {
     const body = await req.json();
 
-    // 🔥 userId 없으면 저장 막기
-    if (!body.userId) {
-      return NextResponse.json(
-        { error: "로그인이 필요합니다" },
-        { status: 400 }
-      );
-    }
-
     const trade = await prisma.trade.create({
       data: {
-        userId: body.userId,
+        userId: body.userId || "guest", // 🔥 로그인 없어도 저장 가능하게
         name: body.name,
         side: body.side,
         price: Number(body.price),
@@ -35,19 +28,10 @@ export async function POST(req: Request) {
   }
 }
 
+// ✅ GET (조회)
 export async function GET(req: Request) {
   try {
-    const { searchParams } = new URL(req.url);
-    const userId = searchParams.get("userId");
-
-    if (!userId) {
-      return NextResponse.json([]);
-    }
-
     const trades = await prisma.trade.findMany({
-      where: {
-        userId,
-      },
       orderBy: {
         date: "desc",
       },

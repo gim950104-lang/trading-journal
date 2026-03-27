@@ -16,9 +16,16 @@ export async function POST(req: Request) {
 
     const body = await req.json();
 
+    // 🔥 유저 없으면 자동 생성
+    await prisma.user.upsert({
+      where: { id: user.id },
+      update: {},
+      create: { id: user.id },
+    });
+
     const trade = await prisma.trade.create({
       data: {
-        userId: user.id, // ✅ 여기 중요
+        userId: user.id,
         name: body.name,
         side: body.side,
         price: Number(body.price),
@@ -49,9 +56,7 @@ export async function GET() {
 
     const trades = await prisma.trade.findMany({
       where: { userId: user.id },
-      orderBy: {
-        date: "desc",
-      },
+      orderBy: { date: "desc" },
     });
 
     return NextResponse.json(trades);

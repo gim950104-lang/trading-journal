@@ -1,14 +1,24 @@
 import { prisma } from "@/lib/prisma";
 import { NextResponse } from "next/server";
+import { currentUser } from "@clerk/nextjs/server";
 
-// ✅ POST (저장)
+// POST (저장)
 export async function POST(req: Request) {
   try {
+    const user = await currentUser();
+
+    if (!user) {
+      return NextResponse.json(
+        { error: "로그인 필요" },
+        { status: 401 }
+      );
+    }
+
     const body = await req.json();
 
     const trade = await prisma.trade.create({
       data: {
-        userId: body.userId || "guest", // 🔥 로그인 없어도 저장 가능하게
+        userId: user.id, // ✅ 여기 중요
         name: body.name,
         side: body.side,
         price: Number(body.price),
@@ -20,7 +30,7 @@ export async function POST(req: Request) {
 
     return NextResponse.json(trade);
   } catch (error) {
-    console.error(error);
+    console.error("POST ERROR:", error);
     return NextResponse.json(
       { error: "서버 에러 발생" },
       { status: 500 }
@@ -28,10 +38,17 @@ export async function POST(req: Request) {
   }
 }
 
-// ✅ GET (조회)
-export async function GET(req: Request) {
+// GET (조회)
+export async function GET() {
   try {
+    const user = await currentUser();
+
+    if (!user) {
+      return NextResponse.json([]);
+    }
+
     const trades = await prisma.trade.findMany({
+      where: { userId: user.id },
       orderBy: {
         date: "desc",
       },
@@ -39,7 +56,7 @@ export async function GET(req: Request) {
 
     return NextResponse.json(trades);
   } catch (error) {
-    console.error(error);
+    console.error("GET ERROR:", error);
     return NextResponse.json(
       { error: "서버 에러 발생" },
       { status: 500 }

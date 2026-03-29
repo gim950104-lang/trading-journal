@@ -26,12 +26,12 @@ export async function POST(req: Request) {
     const trade = await prisma.trade.create({
       data: {
         userId: user.id,
-        name: body.name,
-        side: body.side,
-        price: Number(body.price),
-        qty: Number(body.qty),
+        name: body.name || "",
+        side: body.side || "",
+        price: Number(body.price || 0),
+        qty: Number(body.qty || 0),
         memo: body.memo || "",
-        date: new Date(body.date),
+        date: body.date ? new Date(body.date) : new Date(),
       },
     });
 

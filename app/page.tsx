@@ -77,12 +77,12 @@ export default async function Home() {
       >
         {/* 🔥 SEO 핵심 (제일 중요) */}
         <h1 style={{ margin: 0, fontSize: 32, fontWeight: 800 }}>
-          매매로그 - 무료 주식 매매일지
+          매매로그
         </h1>
 
         <p style={{ color: "#666", marginTop: 8 }}>
-          매매로그는 주식 매매일지를 기록하고 수익 그래프를 자동으로 분석해주는 서비스입니다.
-          로그인 없이 바로 사용 가능합니다.
+          매매를 기록하고 수익을 분석하세요. 
+        
         </p>
 
         {/* 상태 */}

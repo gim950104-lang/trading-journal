@@ -96,9 +96,8 @@ export default async function Home() {
             fontSize: 14,
           }}
         >
-          로그인 상태: {userId ? "로그인됨" : "로그인 안됨"}
-          <br />
-          userId: {userId ?? "없음"}
+          
+          
         </div>
 
         {/* 기능 */}

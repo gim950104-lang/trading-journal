@@ -269,7 +269,7 @@ export default function ProfitPage() {
     return {
       totalBuy: buy,
       totalSell: sell,
-      totalProfit: sell - buy,
+      totalProfit: sell > 0 ? sell - buy : 0,
       stockData: stockArr,
       cumulativeData: cumulativeArr,
       maxStockAmount: maxStock,
@@ -401,7 +401,7 @@ export default function ProfitPage() {
                         item.sell > 0 ? 18 : 0
                       );
 
-                      const stockProfit = item.sell - item.buy;
+                      const stockProfit = item.sell > 0 ? item.sell - item.buy : 0;
 
                       return (
                         <div
@@ -438,8 +438,15 @@ export default function ProfitPage() {
                               stockProfit >= 0 ? "text-red-500" : "text-blue-500"
                             }`}
                           >
-                            손익 {stockProfit >= 0 ? "+" : ""}
-                            {stockProfit.toLocaleString()}원
+                            {item.sell > 0 ? (
+  <>
+    손익 {stockProfit >= 0 ? "+" : ""}
+    {stockProfit.toLocaleString()}원
+  </>
+) : (
+  <>매수 {item.buy.toLocaleString()}원</>
+)}
+                            
                           </div>
                         </div>
                       );
@@ -655,5 +662,5 @@ export default function ProfitPage() {
         </div>
       )}
     </main>
-  );
+  )
 }

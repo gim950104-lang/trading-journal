@@ -85,20 +85,7 @@ export default async function Home() {
         
         </p>
 
-        {/* 상태 */}
-        <div
-          style={{
-            marginTop: 16,
-            padding: 12,
-            borderRadius: 8,
-            backgroundColor: "#f9fafb",
-            border: "1px solid #e5e7eb",
-            fontSize: 14,
-          }}
-        >
-          
-          
-        </div>
+       
 
         {/* 기능 */}
         <div style={{ marginTop: 24, display: "grid", gap: 16 }}>

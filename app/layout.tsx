@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { ClerkProvider } from "@clerk/nextjs";
+import { koKR } from "@clerk/localizations"; // ✅ 추가
 import "./globals.css";
 
 export const metadata: Metadata = {
@@ -34,6 +35,7 @@ export default function RootLayout({
           color: "#111827",
         }}
       >
+        {/* ✅ 여기 핵심 수정 */}
         <ClerkProvider>
           <header
             style={{

@@ -32,7 +32,8 @@ export default function TradePage() {
     qty: "",
     memo: "",
   });
-
+const [keyword, setKeyword] = useState("");
+const [results, setResults] = useState<any[]>([]);
   useEffect(() => {
     if (!isLoaded) return;
 
@@ -327,7 +328,20 @@ export default function TradePage() {
       </main>
     );
   }
+useEffect(() => {
+  const fetchSearch = async () => {
+    if (!keyword) {
+      setResults([]);
+      return;
+    }
 
+    const res = await fetch(`/api/search?q=${keyword}`);
+    const data = await res.json();
+    setResults(data);
+  };
+
+  fetchSearch();
+}, [keyword]);
   return (
     <main className="min-h-screen bg-[#f5f5f5] px-6 py-10">
       <div className="mx-auto max-w-5xl">
@@ -359,12 +373,38 @@ export default function TradePage() {
             </div>
 
             <div className="space-y-3">
-              <input
-                className="w-full rounded-xl border border-slate-300 bg-white px-4 py-3 outline-none transition focus:border-slate-500"
-                placeholder="종목명"
-                value={form.name}
-                onChange={(e) => setForm({ ...form, name: e.target.value })}
-              />
+             <div className="relative">
+  <input
+    className="w-full rounded-xl border border-slate-300 bg-white px-4 py-3 outline-none transition focus:border-slate-500"
+    placeholder="종목명"
+    value={keyword}
+    onChange={(e) => {
+      setKeyword(e.target.value);
+      setForm({ ...form, name: e.target.value });
+    }}
+  />
+
+  {results.length > 0 && (
+    <div className="absolute bg-white border w-full mt-1 rounded-xl shadow z-50 max-h-60 overflow-y-auto">
+      {results.map((item, idx) => (
+        <div
+          key={idx}
+          onClick={() => {
+            setKeyword(item.name);
+            setForm({ ...form, name: item.name });
+            setResults([]);
+          }}
+          className="p-3 hover:bg-gray-100 cursor-pointer flex justify-between"
+        >
+          <span>{item.name}</span>
+          <span className="text-xs text-gray-400">
+            {item.market}
+          </span>
+        </div>
+      ))}
+    </div>
+  )}
+</div>
 
               <select
                 className="w-full rounded-xl border border-slate-300 bg-white px-4 py-3 outline-none transition focus:border-slate-500"

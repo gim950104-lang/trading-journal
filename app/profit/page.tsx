@@ -162,7 +162,7 @@ export default function ProfitPage() {
   } = useMemo(() => {
     let buy = 0;
     let sell = 0;
-
+  let realizedTotalProfit = 0;
     const stockMap = new Map<string, StockDataItem>();
     const positionMap = new Map<string, { qty: number; avg: number }>();
     const profitByDateMap = new Map<
@@ -213,7 +213,7 @@ export default function ProfitPage() {
 
         const sellQty = Math.min(qty, position.qty);
         const realizedProfit = (price - position.avg) * sellQty;
-
+realizedTotalProfit += realizedProfit;
         position.qty = Math.max(position.qty - sellQty, 0);
 
         if (position.qty === 0) {
@@ -269,7 +269,7 @@ export default function ProfitPage() {
     return {
       totalBuy: buy,
       totalSell: sell,
-      totalProfit: sell > 0 ? sell - buy : 0,
+      totalProfit: realizedTotalProfit,
       stockData: stockArr,
       cumulativeData: cumulativeArr,
       maxStockAmount: maxStock,

@@ -10,6 +10,10 @@ datasource db {
 model User {
   id        String   @id
   trades    Trade[]
+
+  // ✅ PRO / FREE 구분용
+  plan      String   @default("FREE")
+
   createdAt DateTime @default(now())
 }
 

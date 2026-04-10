@@ -5,5 +5,6 @@ export async function isProUser(userId: string) {
     where: { id: userId },
   });
 
-  return user?.plan === "PRO";
+  // 👉 타입 우회 + 안전 처리
+  return (user as any)?.plan === "PRO";
 }

@@ -21,6 +21,7 @@ if (!isLoaded) {
   return <div>로딩중...</div>;
 }
 
+
   const [trades, setTrades] = useState<Trade[]>([]);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);

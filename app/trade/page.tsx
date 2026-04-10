@@ -18,6 +18,7 @@ const STORAGE_KEY = "trades";
 export default function TradePage() {
   const { userId, isLoaded } = useAuth();
 
+  // ✅ hooks 먼저 (순서 수정)
   const [trades, setTrades] = useState<Trade[]>([]);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
@@ -36,7 +37,7 @@ export default function TradePage() {
   const [keyword, setKeyword] = useState("");
   const [results, setResults] = useState<any[]>([]);
 
-  // ✅ 거래 데이터 불러오기 (하나로 통합)
+  // ✅ 하나만 남긴 fetchTrades
   useEffect(() => {
     if (!isLoaded) return;
 
@@ -110,14 +111,14 @@ export default function TradePage() {
     fetchTrades();
   }, [isLoaded, userId]);
 
-  // ✅ 검색
+  // 검색 useEffect 그대로 유지
   useEffect(() => {
-    if (!keyword) {
-      setResults([]);
-      return;
-    }
-
     const fetchSearch = async () => {
+      if (!keyword) {
+        setResults([]);
+        return;
+      }
+
       const res = await fetch(`/api/search?q=${keyword}`);
       const data = await res.json();
       setResults(data);
@@ -193,7 +194,9 @@ export default function TradePage() {
       if (editingId) {
         const res = await fetch(`/api/trades/${editingId}`, {
           method: "PATCH",
-          headers: { "Content-Type": "application/json" },
+          headers: {
+            "Content-Type": "application/json",
+          },
           body: JSON.stringify({
             name: form.name.trim(),
             side: form.side,
@@ -206,7 +209,9 @@ export default function TradePage() {
 
         const data = await res.json();
 
-        if (!res.ok) throw new Error(data?.error || "거래 수정 실패");
+        if (!res.ok) {
+          throw new Error(data?.error || "거래 수정 실패");
+        }
 
         setTrades((prev) =>
           prev.map((trade) =>
@@ -231,9 +236,11 @@ export default function TradePage() {
 
       const res = await fetch("/api/trades", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: {
+          "Content-Type": "application/json",
+        },
         body: JSON.stringify({
-          userId,
+          userId: userId,
           name: form.name.trim(),
           side: form.side,
           date: form.date,
@@ -245,7 +252,9 @@ export default function TradePage() {
 
       const data = await res.json();
 
-      if (!res.ok) throw new Error(data?.error || "거래 저장 실패");
+      if (!res.ok) {
+        throw new Error(data?.error || "거래 저장 실패");
+      }
 
       const newTrade: Trade = {
         id: String(data.id ?? ""),
@@ -278,7 +287,11 @@ export default function TradePage() {
       if (!userId) {
         const nextTrades = trades.filter((trade) => trade.id !== id);
         saveGuestTrades(nextTrades);
-        if (editingId === id) resetForm();
+
+        if (editingId === id) {
+          resetForm();
+        }
+
         alert("삭제 완료");
         return;
       }
@@ -289,10 +302,15 @@ export default function TradePage() {
 
       const data = await res.json();
 
-      if (!res.ok) throw new Error(data?.error || "거래 삭제 실패");
+      if (!res.ok) {
+        throw new Error(data?.error || "거래 삭제 실패");
+      }
 
       setTrades((prev) => prev.filter((trade) => trade.id !== id));
-      if (editingId === id) resetForm();
+
+      if (editingId === id) {
+        resetForm();
+      }
 
       alert("삭제 완료");
     } catch (error: any) {
@@ -318,12 +336,50 @@ export default function TradePage() {
   };
 
   if (!isLoaded) {
-    return <div>로딩중...</div>;
+    return <div>불러오는 중...</div>;
   }
 
   return (
     <main className="min-h-screen bg-[#f5f5f5] px-6 py-10">
-      {/* UI 그대로 유지 */}
+      <div className="mx-auto max-w-5xl">
+        <h1 className="mb-8 text-4xl font-extrabold tracking-tight text-slate-900">
+          매매 기록
+        </h1>
+
+        {!userId && (
+          <div className="mb-6 rounded-2xl border border-slate-200 bg-white px-5 py-4 text-sm text-slate-600 shadow-sm">
+            현재 게스트 모드야. 로그인하지 않으면 기록은 이 브라우저에만 저장돼.
+          </div>
+        )}
+
+        <div className="grid gap-8 lg:grid-cols-[380px_1fr]">
+          <section className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
+            <div className="space-y-3">
+              <input value={form.name} onChange={(e)=>setForm({...form,name:e.target.value})} placeholder="종목명"/>
+              <input type="date" value={form.date} onChange={(e)=>setForm({...form,date:e.target.value})}/>
+              <input value={form.price} onChange={(e)=>setForm({...form,price:e.target.value})} placeholder="가격"/>
+              <input value={form.qty} onChange={(e)=>setForm({...form,qty:e.target.value})} placeholder="수량"/>
+              <button onClick={handleSubmit}>{editingId?"수정 완료":"저장"}</button>
+            </div>
+          </section>
+
+          <section className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
+            {loading ? (
+              <div>불러오는 중...</div>
+            ) : trades.length === 0 ? (
+              <div>데이터 없음</div>
+            ) : (
+              trades.map((trade) => (
+                <div key={trade.id}>
+                  <div>{trade.name}</div>
+                  <button onClick={()=>handleEdit(trade)}>수정</button>
+                  <button onClick={()=>handleDelete(trade.id)}>삭제</button>
+                </div>
+              ))
+            )}
+          </section>
+        </div>
+      </div>
     </main>
   );
 }

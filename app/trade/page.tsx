@@ -20,7 +20,57 @@ export default function TradePage() {
 if (!isLoaded) {
   return <div>로딩중...</div>;
 }
+useEffect(() => {
+  if (!isLoaded) return;
 
+  const fetchTrades = async () => {
+    try {
+      setLoading(true);
+
+      // 👉 비로그인 (로컬 저장)
+      if (!userId) {
+        const saved = localStorage.getItem(STORAGE_KEY);
+
+        if (saved) {
+          try {
+            const parsed = JSON.parse(saved);
+
+            if (Array.isArray(parsed)) {
+              setTrades(parsed);
+            } else {
+              setTrades([]);
+            }
+          } catch {
+            setTrades([]);
+          }
+        } else {
+          setTrades([]);
+        }
+
+        return;
+      }
+
+      // 👉 로그인 상태
+      const res = await fetch(`/api/trades?userId=${userId}`);
+
+      const data = await res.json();
+
+      if (!Array.isArray(data)) {
+        setTrades([]);
+        return;
+      }
+
+      setTrades(data);
+    } catch (error) {
+      console.error(error);
+      setTrades([]);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  fetchTrades();
+}, [isLoaded, userId]);
 
   const [trades, setTrades] = useState<Trade[]>([]);
   const [editingId, setEditingId] = useState<string | null>(null);

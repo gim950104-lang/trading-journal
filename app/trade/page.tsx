@@ -41,7 +41,6 @@ export default function TradePage() {
   const [keyword, setKeyword] = useState("");
   const [results, setResults] = useState<SearchItem[]>([]);
 
-  // ✅ 초기 데이터 불러오기
   useEffect(() => {
     if (!isLoaded) return;
 
@@ -53,7 +52,6 @@ export default function TradePage() {
     setLoading(false);
   }, [isLoaded]);
 
-  // ✅ 자동완성
   useEffect(() => {
     const fetchSearch = async () => {
       if (!keyword) {
@@ -69,7 +67,6 @@ export default function TradePage() {
     fetchSearch();
   }, [keyword]);
 
-  // ✅ 저장
   const handleSubmit = () => {
     if (!form.name || !form.date) {
       alert("필수값 입력");
@@ -102,12 +99,14 @@ export default function TradePage() {
 
   return (
     <main className="p-10 max-w-5xl mx-auto">
-      <h1 className="text-3xl font-bold mb-6">매매일지</h1>
+      <h1 className="text-4xl font-bold mb-8 tracking-tight">
+        매매일지
+      </h1>
 
       {/* 입력 */}
-      <div className="bg-white p-6 rounded-xl shadow mb-8 relative">
+      <div className="bg-white p-8 rounded-2xl shadow-lg mb-10 relative border border-gray-100">
         <input
-          className="border p-3 w-full mb-2"
+          className="w-full p-3 mb-3 rounded-xl border border-gray-200 focus:outline-none focus:ring-2 focus:ring-black/70"
           placeholder="종목명"
           value={keyword}
           onChange={(e) => {
@@ -118,11 +117,11 @@ export default function TradePage() {
 
         {/* 자동완성 */}
         {results.length > 0 && (
-          <div className="absolute bg-white border w-full mt-1 z-50 rounded shadow max-h-60 overflow-y-auto">
+          <div className="absolute bg-white border w-full mt-1 z-50 rounded-xl shadow max-h-60 overflow-y-auto">
             {results.map((item, i) => (
               <div
                 key={i}
-                className="p-2 hover:bg-gray-100 cursor-pointer flex justify-between"
+                className="p-3 hover:bg-gray-100 cursor-pointer flex justify-between"
                 onClick={() => {
                   setKeyword(item.name);
                   setForm({ ...form, name: item.name });
@@ -140,28 +139,36 @@ export default function TradePage() {
 
         <input
           type="date"
-          className="border p-3 w-full mb-2"
+          className="w-full p-3 mb-3 rounded-xl border border-gray-200 focus:outline-none focus:ring-2 focus:ring-black/70"
           value={form.date}
           onChange={(e) => setForm({ ...form, date: e.target.value })}
         />
 
         <input
-          className="border p-3 w-full mb-2"
+          className="w-full p-3 mb-3 rounded-xl border border-gray-200 focus:outline-none focus:ring-2 focus:ring-black/70"
           placeholder="가격"
           value={form.price}
           onChange={(e) => setForm({ ...form, price: e.target.value })}
         />
 
         <input
-          className="border p-3 w-full mb-2"
+          className="w-full p-3 mb-3 rounded-xl border border-gray-200 focus:outline-none focus:ring-2 focus:ring-black/70"
           placeholder="수량"
           value={form.qty}
           onChange={(e) => setForm({ ...form, qty: e.target.value })}
         />
 
+        {/* ✅ 메모 추가 */}
+        <textarea
+          className="w-full p-3 mb-4 rounded-xl border border-gray-200 focus:outline-none focus:ring-2 focus:ring-black/70"
+          placeholder="메모 (매매 이유, 느낀점)"
+          value={form.memo}
+          onChange={(e) => setForm({ ...form, memo: e.target.value })}
+        />
+
         <button
           onClick={handleSubmit}
-          className="bg-black text-white w-full p-3 rounded"
+          className="w-full p-3 rounded-xl bg-black text-white font-semibold hover:opacity-90 transition"
         >
           저장
         </button>
@@ -170,11 +177,19 @@ export default function TradePage() {
       {/* 리스트 */}
       <div>
         {trades.map((t) => (
-          <div key={t.id} className="border p-4 mb-2 rounded">
-            <div className="font-bold">{t.name}</div>
+          <div
+            key={t.id}
+            className="border border-gray-200 p-4 mb-3 rounded-xl shadow-sm"
+          >
+            <div className="font-semibold text-lg">{t.name}</div>
             <div className="text-sm text-gray-500">
               {t.date} / {t.price} / {t.qty}
             </div>
+            {t.memo && (
+              <div className="text-sm mt-2 text-gray-700">
+                📝 {t.memo}
+              </div>
+            )}
           </div>
         ))}
       </div>

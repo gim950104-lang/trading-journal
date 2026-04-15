@@ -106,7 +106,7 @@ export default function TradePage() {
       {/* 입력 */}
       <div className="bg-white p-8 rounded-2xl shadow-lg mb-10 relative border border-gray-100">
         <input
-          className="w-full p-3 mb-3 rounded-xl border border-gray-200 focus:outline-none focus:ring-2 focus:ring-black/70"
+          className="w-full p-3 mb-3 rounded-xl border border-gray-200"
           placeholder="종목명"
           value={keyword}
           onChange={(e) => {
@@ -137,30 +137,41 @@ export default function TradePage() {
           </div>
         )}
 
+        {/* ✅ 매수/매도 선택 추가 */}
+        <select
+          className="w-full p-3 mb-3 rounded-xl border border-gray-200"
+          value={form.side}
+          onChange={(e) =>
+            setForm({ ...form, side: e.target.value })
+          }
+        >
+          <option value="매수">매수</option>
+          <option value="매도">매도</option>
+        </select>
+
         <input
           type="date"
-          className="w-full p-3 mb-3 rounded-xl border border-gray-200 focus:outline-none focus:ring-2 focus:ring-black/70"
+          className="w-full p-3 mb-3 rounded-xl border border-gray-200"
           value={form.date}
           onChange={(e) => setForm({ ...form, date: e.target.value })}
         />
 
         <input
-          className="w-full p-3 mb-3 rounded-xl border border-gray-200 focus:outline-none focus:ring-2 focus:ring-black/70"
+          className="w-full p-3 mb-3 rounded-xl border border-gray-200"
           placeholder="가격"
           value={form.price}
           onChange={(e) => setForm({ ...form, price: e.target.value })}
         />
 
         <input
-          className="w-full p-3 mb-3 rounded-xl border border-gray-200 focus:outline-none focus:ring-2 focus:ring-black/70"
+          className="w-full p-3 mb-3 rounded-xl border border-gray-200"
           placeholder="수량"
           value={form.qty}
           onChange={(e) => setForm({ ...form, qty: e.target.value })}
         />
 
-        {/* ✅ 메모 추가 */}
         <textarea
-          className="w-full p-3 mb-4 rounded-xl border border-gray-200 focus:outline-none focus:ring-2 focus:ring-black/70"
+          className="w-full p-3 mb-4 rounded-xl border border-gray-200"
           placeholder="메모 (매매 이유, 느낀점)"
           value={form.memo}
           onChange={(e) => setForm({ ...form, memo: e.target.value })}
@@ -168,7 +179,7 @@ export default function TradePage() {
 
         <button
           onClick={handleSubmit}
-          className="w-full p-3 rounded-xl bg-black text-white font-semibold hover:opacity-90 transition"
+          className="w-full p-3 rounded-xl bg-black text-white font-semibold"
         >
           저장
         </button>
@@ -181,7 +192,9 @@ export default function TradePage() {
             key={t.id}
             className="border border-gray-200 p-4 mb-3 rounded-xl shadow-sm"
           >
-            <div className="font-semibold text-lg">{t.name}</div>
+            <div className="font-semibold text-lg">
+              {t.name} ({t.side}) {/* ✅ 여기 추가 */}
+            </div>
             <div className="text-sm text-gray-500">
               {t.date} / {t.price} / {t.qty}
             </div>

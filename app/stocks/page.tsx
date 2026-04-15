@@ -17,24 +17,16 @@ export default function StocksPage() {
   const [trades, setTrades] = useState<Trade[]>([]);
   const [loading, setLoading] = useState(true);
 
+  // ✅ 여기 수정됨 (API → localStorage)
   useEffect(() => {
-    const fetchTrades = async () => {
+    const saved = localStorage.getItem("trades");
+
+    if (saved) {
       try {
-        setLoading(true);
+        const parsed = JSON.parse(saved);
 
-        const res = await fetch("/api/trades", {
-          method: "GET",
-          cache: "no-store",
-        });
-
-        const data = await res.json();
-
-        if (!res.ok) {
-          throw new Error(data?.error || "거래 기록 조회 실패");
-        }
-
-        const normalized = Array.isArray(data)
-          ? data.map((item: any) => ({
+        const normalized = Array.isArray(parsed)
+          ? parsed.map((item: any) => ({
               id: String(item.id ?? ""),
               name: String(item.name ?? ""),
               side: String(item.side ?? "매수"),
@@ -46,15 +38,13 @@ export default function StocksPage() {
           : [];
 
         setTrades(normalized);
-      } catch (error) {
-        console.error(error);
+      } catch (e) {
+        console.error(e);
         setTrades([]);
-      } finally {
-        setLoading(false);
       }
-    };
+    }
 
-    fetchTrades();
+    setLoading(false);
   }, []);
 
   const stocks = useMemo(() => {

@@ -17,24 +17,18 @@ export default function StockDetailPage() {
   const [trades, setTrades] = useState<Trade[]>([]);
   const [loading, setLoading] = useState(true);
 
+  // ✅ 여기만 수정됨 (API → localStorage)
   useEffect(() => {
-    const fetchTrades = async () => {
-      try {
-        setLoading(true);
+    try {
+      setLoading(true);
 
-        const res = await fetch("/api/trades", {
-          method: "GET",
-          cache: "no-store",
-        });
+      const saved = localStorage.getItem("trades");
 
-        const data = await res.json();
+      if (saved) {
+        const parsed = JSON.parse(saved);
 
-        if (!res.ok) {
-          throw new Error(data?.error || "거래 기록 조회 실패");
-        }
-
-        const normalized = Array.isArray(data)
-          ? data.map((item: any) => ({
+        const normalized = Array.isArray(parsed)
+          ? parsed.map((item: any) => ({
               id: String(item.id ?? ""),
               name: String(item.name ?? ""),
               side: String(item.side ?? "매수"),
@@ -45,15 +39,15 @@ export default function StockDetailPage() {
           : [];
 
         setTrades(normalized);
-      } catch (error) {
-        console.error(error);
+      } else {
         setTrades([]);
-      } finally {
-        setLoading(false);
       }
-    };
-
-    fetchTrades();
+    } catch (error) {
+      console.error(error);
+      setTrades([]);
+    } finally {
+      setLoading(false);
+    }
   }, []);
 
   const stockName = decodeURIComponent(String(params.name || "")).trim();
@@ -99,23 +93,44 @@ export default function StockDetailPage() {
           </div>
         ) : (
           <>
+            {/* ✅ 요약 */}
             <div className="mb-6 rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
               <div className="space-y-2 text-xl">
                 <div>총 매수: {summary.buy.toLocaleString()}원</div>
                 <div>총 매도: {summary.sell.toLocaleString()}원</div>
-                <div className="font-bold text-slate-900">
+
+                {/* ✅ 수익 색상 추가 */}
+                <div
+                  className={`font-bold ${
+                    summary.profit > 0
+                      ? "text-red-500"
+                      : summary.profit < 0
+                      ? "text-blue-500"
+                      : "text-slate-900"
+                  }`}
+                >
                   손익: {summary.profit.toLocaleString()}원
                 </div>
               </div>
             </div>
 
+            {/* ✅ 거래 리스트 */}
             <div className="space-y-4">
               {filteredTrades.map((trade) => (
                 <div
                   key={trade.id}
                   className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm"
                 >
-                  <div className="text-2xl font-bold text-slate-900">{trade.side}</div>
+                  <div
+                    className={`text-2xl font-bold ${
+                      trade.side === "매수"
+                        ? "text-red-500"
+                        : "text-blue-500"
+                    }`}
+                  >
+                    {trade.side}
+                  </div>
+
                   <div className="mt-2 text-slate-500">
                     {trade.date} / {trade.price}원 / {trade.qty}주
                   </div>
